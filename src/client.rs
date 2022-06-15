@@ -3,7 +3,7 @@ use once_cell::sync::OnceCell;
 use reqwest::IntoUrl;
 use std::collections::HashMap;
 
-use crate::{models::*, error::*};
+use crate::{error::*, models::*};
 use reqwest::{
     Client as ReqClient, ClientBuilder as ReqClientBuilder, RequestBuilder as ReqRequestBuilder,
 };
@@ -74,7 +74,8 @@ impl Client {
             .post("https://api-student.skyeng.ru/api/v2/users")
             .send()
             .await?
-            .json().await?;
+            .json()
+            .await?;
         Ok(resp.users.first().unwrap().id)
     }
 
@@ -85,16 +86,15 @@ impl Client {
             .form(&self.data_for_login().await?)
             .send()
             .await?
-            .json::<LoginResp>().await?
+            .json::<LoginResp>()
+            .await?
         {
             LoginResp::Success { redirect, success } => {
                 assert!(success);
                 redirect
             }
             LoginResp::Failed {
-                message,
-                code,
-                success,
+                message, success, ..
             } => {
                 assert!(!success);
                 bail!(message)
@@ -113,9 +113,14 @@ impl Client {
             }
             Some(v) => {
                 let cookie = v.to_str()?;
-                let (tg, _) = cookie.split_once(';').ok_or(Error::InvalidSkyengData("cookie not valid"))?;
-                self.creds
-                    .set_token(tg.strip_prefix("token_global=").ok_or(Error::InvalidSkyengData("jwt not found in cookies"))?.to_string());
+                let (tg, _) = cookie
+                    .split_once(';')
+                    .ok_or(Error::InvalidSkyengData("cookie not valid"))?;
+                self.creds.set_token(
+                    tg.strip_prefix("token_global=")
+                        .ok_or(Error::InvalidSkyengData("jwt not found in cookies"))?
+                        .to_string(),
+                );
             }
         }
 
@@ -128,8 +133,10 @@ impl Client {
         let initial_resp = self
             .inner
             .get("https://id.skyeng.ru/login")
-            .send().await?
-            .text().await?;
+            .send()
+            .await?
+            .text()
+            .await?;
 
         let doc = Html::parse_document(initial_resp.as_str());
 
@@ -166,9 +173,12 @@ impl Client {
     }
 
     pub async fn default_wordset(&self) -> Result<DefaultWordset> {
-        Ok(self.get(
-            "https://api-words.skyeng.ru/api/for-mobile/v1/wordsets/default.json"
-        ).send().await?.json().await?)
+        Ok(self
+            .get("https://api-words.skyeng.ru/api/for-mobile/v1/wordsets/default.json")
+            .send()
+            .await?
+            .json()
+            .await?)
     }
 
     pub async fn wordsets_page(&self, page_size: i32, page: i32) -> Result<WordsetsResp> {

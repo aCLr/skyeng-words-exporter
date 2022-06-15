@@ -3,13 +3,10 @@ use std::io::prelude::Write;
 
 use anyhow::Result;
 
-
-use client::Client;
 use std::env;
 
-mod client;
-mod models;
-mod error;
+use skyeng_words::client::Client;
+mod sync;
 
 const PAGE_SIZE: i32 = 999;
 
@@ -21,6 +18,12 @@ async fn main() -> Result<()> {
     )?;
 
     client.login().await?;
+
+    // sync(&client).await?;
+    //
+    // loop {
+    //     client
+    // }
 
     let wordsets = client.wordsets_page(PAGE_SIZE, 1).await?;
     //

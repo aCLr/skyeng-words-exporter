@@ -42,8 +42,8 @@ pub struct Wordset {
 
 #[derive(Debug, Deserialize)]
 pub struct WordsetsResp {
-    pub meta: MetaResp,
-    pub data: Vec<Wordset>,
+    meta: MetaResp,
+    data: Vec<Wordset>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -60,9 +60,17 @@ pub struct WordsResp {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Meaning {
+    id: i32,
+    #[serde(rename(deserialize = "wordId"))]
+    word_id: i32,
+    #[serde(rename(deserialize = "difficultyLevel"))]
+    difficulty_level: i8,
     text: String,
     translation: TextFieldOnly,
     definition: TextFieldOnly,
+    #[serde(rename(deserialize = "isGold3000"))]
+    is_gold_3000: bool,
+    examples: Vec<TextFieldOnly>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -73,6 +81,37 @@ pub struct TextFieldOnly {
 #[derive(Debug, Deserialize)]
 pub struct DefaultWordset {
     id: i32,
-    #[serde(rename(deserialize="countOfWords"))]
-    count_of_words: i32
+    #[serde(rename(deserialize = "countOfWords"))]
+    count_of_words: i32,
+}
+
+impl From<DefaultWordset> for Wordset {
+    fn from(w: DefaultWordset) -> Self {
+        Self { id: w.id }
+    }
+}
+
+pub trait Resp<D> {
+    fn get_meta(&self) -> &MetaResp;
+    fn get_data(self) -> Vec<D>;
+}
+
+impl Resp<Word> for WordsResp {
+    fn get_meta(&self) -> &MetaResp {
+        &self.meta
+    }
+
+    fn get_data(self) -> Vec<Word> {
+        self.data
+    }
+}
+
+impl Resp<Wordset> for WordsetsResp {
+    fn get_meta(&self) -> &MetaResp {
+        &self.meta
+    }
+
+    fn get_data(self) -> Vec<Wordset> {
+        self.data
+    }
 }
