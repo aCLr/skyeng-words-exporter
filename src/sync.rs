@@ -1,5 +1,7 @@
 use anyhow::Result;
-use skyeng_words::{client::Client, models::*};
+use skyeng_words::client::*;
+use skyeng_words::db;
+use std::collections::HashSet;
 use std::future::Future;
 
 pub async fn sync(client: &Client) -> Result<()> {
@@ -12,12 +14,16 @@ pub async fn sync(client: &Client) -> Result<()> {
 
     let mut meanings = Vec::with_capacity(words.len());
     for chunk in words.chunks(30) {
-        meanings.extend(
-            client
-                .meanings(chunk.iter().map(|w| w.meaning_id).collect())
-                .await?,
-        );
+        let m_ids = chunk.iter().map(|w| w.meaning_id.to_string()).collect();
+        meanings.extend(client.meanings(&m_ids).await?);
     }
+    let unfiltered: HashSet<i32> =
+        HashSet::from_iter(db::filter_ids(&meanings.iter().map(|m| m.id).collect()).await?);
+    let meanings: Vec<Meaning> = meanings
+        .into_iter()
+        .filter(|p| unfiltered.contains(&p.id))
+        .collect();
+    db::save_new_words(meanings).await?;
     Ok(())
 }
 

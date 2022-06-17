@@ -60,29 +60,29 @@ pub struct WordsResp {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Meaning {
-    id: i32,
+    pub id: i32,
     #[serde(rename(deserialize = "wordId"))]
-    word_id: i32,
+    pub word_id: i32,
     #[serde(rename(deserialize = "difficultyLevel"))]
-    difficulty_level: i8,
-    text: String,
-    translation: TextFieldOnly,
-    definition: TextFieldOnly,
+    pub difficulty_level: i8,
+    pub text: String,
+    pub translation: TextFieldOnly,
+    pub definition: TextFieldOnly,
     #[serde(rename(deserialize = "isGold3000"))]
-    is_gold_3000: bool,
-    examples: Vec<TextFieldOnly>,
+    pub is_gold_3000: bool,
+    pub examples: Vec<TextFieldOnly>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct TextFieldOnly {
-    text: String,
+    pub text: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Deserialize)]
 pub struct DefaultWordset {
     id: i32,
-    #[serde(rename(deserialize = "countOfWords"))]
-    count_of_words: i32,
+    // #[serde(rename(deserialize = "countOfWords"))]
+    // count_of_words: i32,
 }
 
 impl From<DefaultWordset> for Wordset {

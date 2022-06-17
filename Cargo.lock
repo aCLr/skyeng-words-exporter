@@ -613,6 +613,9 @@ dependencies = [
 [[package]]
 name = "entity"
 version = "0.1.0"
+dependencies = [
+ "sea-orm",
+]
 
 [[package]]
 name = "event-listener"
@@ -1185,6 +1188,7 @@ version = "0.1.0"
 dependencies = [
  "entity",
  "sea-orm-migration",
+ "tokio",
 ]
 
 [[package]]
@@ -2223,6 +2227,8 @@ name = "skyeng-words"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "dotenv",
+ "entity",
  "form_urlencoded",
  "migration",
  "once_cell",

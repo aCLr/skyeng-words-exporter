@@ -3,7 +3,8 @@ use once_cell::sync::OnceCell;
 use reqwest::IntoUrl;
 use std::collections::HashMap;
 
-use crate::{error::*, models::*};
+use super::models::*;
+use crate::error::*;
 use reqwest::{
     Client as ReqClient, ClientBuilder as ReqClientBuilder, RequestBuilder as ReqRequestBuilder,
 };
@@ -174,7 +175,7 @@ impl Client {
 
     pub async fn default_wordset(&self) -> Result<DefaultWordset> {
         Ok(self
-            .get("https://api-words.skyeng.ru/api/for-mobile/v1/wordsets/default.json")
+            .put("https://api-words.skyeng.ru/api/for-mobile/v1/wordsets/default.json")
             .send()
             .await?
             .json()
@@ -209,7 +210,7 @@ impl Client {
             .await?)
     }
 
-    pub async fn meanings(&self, meaning_ids: &[String]) -> Result<Vec<Meaning>> {
+    pub async fn meanings(&self, meaning_ids: &Vec<String>) -> Result<Vec<Meaning>> {
         let joined = meaning_ids.join(",");
         Ok(self.get(format!(r#"https://dictionary.skyeng.ru/api/for-services/v2/meanings?ids={joined}&acceptLanguage=ru"#)).send().await?.json().await?)
     }

@@ -10,4 +10,5 @@ path = "src/lib.rs"
 
 [dependencies]
 entity = { path = "../entity" }
-sea-orm-migration= "^0.8.0"
+sea-orm-migration= {version = "^0.8.0", features=["sqlx-sqlite", "runtime-tokio-native-tls"]}
+tokio = { version = "1.19.2", features = ["full"] }
