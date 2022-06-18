@@ -102,10 +102,10 @@ impl Client {
             }
         };
 
-        self.get(redirect_url).send().await?;
+        self.inner.get(redirect_url).send().await?;
 
         let jwt_resp = self
-            .post("https://id.skyeng.ru/user-api/v1/auth/jwt")
+            .inner.post("https://id.skyeng.ru/user-api/v1/auth/jwt")
             .send()
             .await?;
         match jwt_resp.headers().get("set-cookie") {
@@ -210,7 +210,7 @@ impl Client {
             .await?)
     }
 
-    pub async fn meanings(&self, meaning_ids: &Vec<String>) -> Result<Vec<Meaning>> {
+    pub async fn meanings(&self, meaning_ids: &[String]) -> Result<Vec<Meaning>> {
         let joined = meaning_ids.join(",");
         Ok(self.get(format!(r#"https://dictionary.skyeng.ru/api/for-services/v2/meanings?ids={joined}&acceptLanguage=ru"#)).send().await?.json().await?)
     }

@@ -45,10 +45,10 @@ fn make_word(mean: Meaning) -> words::ActiveModel {
     words::ActiveModel {
         id: Set(mean.id),
         word_id: Set(mean.word_id),
-        difficulty_level: Set(mean.difficulty_level.into()),
+        difficulty_level: Set(mean.difficulty_level.unwrap_or_default().into()),
         text: Set(mean.text),
         translation: Set(mean.translation.text),
-        definition: Set(mean.definition.text),
+        definition: Set(mean.definition.map_or("".to_string(), |t|t.text)),
         is_gold_3000: Set(mean.is_gold_3000),
         examples: Set(mean
             .examples
@@ -64,8 +64,8 @@ pub async fn filter_ids(found: &Vec<i32>) -> Result<Vec<i32>> {
             DatabaseBackend::Sqlite,
             format!(
                 r#"
-            with cte(found_idc) as
-                 (values {values}
+            with cte(found_id) as
+                 (values {values})
             select found_id
             from cte
             where found_id not in (select id from words);

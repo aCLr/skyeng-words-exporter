@@ -64,10 +64,10 @@ pub struct Meaning {
     #[serde(rename(deserialize = "wordId"))]
     pub word_id: i32,
     #[serde(rename(deserialize = "difficultyLevel"))]
-    pub difficulty_level: i8,
+    pub difficulty_level: Option<i8>,
     pub text: String,
     pub translation: TextFieldOnly,
-    pub definition: TextFieldOnly,
+    pub definition: Option<TextFieldOnly>,
     #[serde(rename(deserialize = "isGold3000"))]
     pub is_gold_3000: bool,
     pub examples: Vec<TextFieldOnly>,
