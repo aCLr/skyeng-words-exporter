@@ -38,6 +38,7 @@ pub struct MetaResp {
 #[derive(Debug, Deserialize)]
 pub struct Wordset {
     pub id: i32,
+    pub title: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -81,13 +82,17 @@ pub struct TextFieldOnly {
 #[derive(Deserialize)]
 pub struct DefaultWordset {
     id: i32,
+    title: String,
     // #[serde(rename(deserialize = "countOfWords"))]
     // count_of_words: i32,
 }
 
 impl From<DefaultWordset> for Wordset {
     fn from(w: DefaultWordset) -> Self {
-        Self { id: w.id }
+        Self {
+            id: w.id,
+            title: w.title,
+        }
     }
 }
 

@@ -9,22 +9,34 @@ pub async fn sync(client: &Client) -> Result<()> {
     let wordsets = get_wordsets(client).await?;
     log::info!("got {} wordsets", wordsets.len());
 
-    log::info!("start fetching words");
-    let mut words = Vec::with_capacity(wordsets.len() * 10);
-    for ws in wordsets {
-        words.extend(fetch_until_completed(|ps, p| client.words_of_wordset(ws.id, ps, p)).await?);
+    for (i, ws) in wordsets.into_iter().enumerate() {
+        log::info!("{num} wordset started", num = i + 1);
+        sync_wordset(client, ws).await?;
     }
+
+    Ok(())
+}
+
+async fn sync_wordset(client: &Client, ws: Wordset) -> Result<()> {
+    db::save_ws_if_not_exists(&ws).await?;
+    log::info!("start fetching words");
+    let words = fetch_until_completed(|ps, p| client.words_of_wordset(ws.id, ps, p)).await?;
     log::info!("got {} words", words.len());
 
     log::info!("start fetching meanings");
-    let mut meanings = Vec::with_capacity(words.len());
-    for chunk in words.chunks(30) {
-        meanings.extend(client.meanings(&(chunk.iter().map(|w| w.meaning_id.to_string()).collect::<Vec<String>>())).await?);
-    }
+    let meanings = client
+        .meanings(
+            &(words
+                .iter()
+                .map(|w| w.meaning_id.to_string())
+                .collect::<Vec<String>>()),
+        )
+        .await?;
     log::info!("got {} meanings", meanings.len());
 
-    let filtered: HashSet<i32> =
-        HashSet::from_iter(db::filter_ids(&meanings.iter().map(|m| m.id).collect()).await?);
+    let filtered: HashSet<i32> = HashSet::from_iter(
+        db::filter_unexisted_word_ids(&meanings.iter().map(|m| m.id).collect()).await?,
+    );
     log::info!("got {} new meanings", filtered.len());
 
     log::info!("start saving meanings to db");
@@ -32,7 +44,9 @@ pub async fn sync(client: &Client) -> Result<()> {
         .into_iter()
         .filter(|p| filtered.contains(&p.id))
         .collect();
-    db::save_new_words(meanings).await?;
+    if meanings.len() > 0 {
+        db::save_new_ws_words(meanings, ws.id).await?;
+    }
     Ok(())
 }
 

@@ -3,18 +3,11 @@
 use sea_orm::entity::prelude::*;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel)]
-#[sea_orm(table_name = "words")]
+#[sea_orm(table_name = "wordsets")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub id: i32,
-    pub word_id: i32,
-    pub difficulty_level: i32,
-    pub text: String,
-    pub translation: String,
-    pub definition: String,
-    pub is_gold_3000: bool,
-    pub examples: String,
-    pub wordset_id: i32,
+    pub name: String,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter)]

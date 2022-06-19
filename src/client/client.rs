@@ -105,7 +105,8 @@ impl Client {
         self.inner.get(redirect_url).send().await?;
 
         let jwt_resp = self
-            .inner.post("https://id.skyeng.ru/user-api/v1/auth/jwt")
+            .inner
+            .post("https://id.skyeng.ru/user-api/v1/auth/jwt")
             .send()
             .await?;
         match jwt_resp.headers().get("set-cookie") {
