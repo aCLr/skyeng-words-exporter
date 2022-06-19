@@ -33,14 +33,17 @@ pub async fn sync_wordset(client: &Client, ws_id_or_name: IdOrName) -> Result<()
     log::info!("got {} words", words.len());
 
     log::info!("start fetching meanings");
-    let meanings = client
-        .meanings(
-            &(words
-                .iter()
-                .map(|w| w.meaning_id.to_string())
-                .collect::<Vec<String>>()),
-        )
-        .await?;
+    let mut meanings = Vec::with_capacity(words.len());
+    for chunk in words.chunks(50) {
+        meanings.extend(client
+            .meanings(
+                &(chunk
+                    .iter()
+                    .map(|w| w.meaning_id.to_string())
+                    .collect::<Vec<String>>()),
+            )
+            .await?);
+    }
     log::info!("got {} meanings", meanings.len());
 
     let filtered: HashSet<i32> = HashSet::from_iter(
@@ -72,11 +75,15 @@ where
     Fut: Future<Output = Result<T>>,
 {
     let mut resp = call(100, 1).await?;
-    let total = resp.get_meta().total as usize;
+    let meta = resp.get_meta();
+    let total = meta.total as usize;
+    let mut current_page = meta.current_page;
+    log::debug!("total: {total}");
     let mut result: Vec<R> = resp.get_data();
     while total as usize > result.len() {
-        resp = call(100, 1).await?;
-        result.extend(resp.get_data())
+        resp = call(100, current_page + 1).await?;
+        current_page = resp.get_meta().current_page;
+        result.extend(resp.get_data());
     }
 
     Ok(result)
