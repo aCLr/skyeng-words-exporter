@@ -15,6 +15,7 @@ pub struct Model {
     pub is_gold_3000: bool,
     pub examples: String,
     pub wordset_id: i32,
+    pub exported: bool,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter)]

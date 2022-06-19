@@ -2,6 +2,7 @@ pub use sea_orm_migration::prelude::*;
 
 mod m20220101_000001_create_table_words;
 mod m20220619_130453_create_wordset;
+mod m20220619_193726_unexported_words;
 
 pub struct Migrator;
 
@@ -11,6 +12,7 @@ impl MigratorTrait for Migrator {
         vec![
             Box::new(m20220101_000001_create_table_words::Migration),
             Box::new(m20220619_130453_create_wordset::Migration),
+            Box::new(m20220619_193726_unexported_words::Migration),
         ]
     }
 }

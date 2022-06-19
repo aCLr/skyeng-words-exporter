@@ -1,6 +1,6 @@
+use crate::client::*;
+use crate::db;
 use anyhow::Result;
-use skyeng_words::client::*;
-use skyeng_words::db;
 use std::collections::HashSet;
 use std::future::Future;
 
@@ -11,16 +11,25 @@ pub async fn sync(client: &Client) -> Result<()> {
 
     for (i, ws) in wordsets.into_iter().enumerate() {
         log::info!("{num} wordset started", num = i + 1);
-        sync_wordset(client, ws).await?;
+        db::save_ws_if_not_exists(&ws).await?;
+        sync_wordset(client, IdOrName::Id(ws.id)).await?;
     }
 
     Ok(())
 }
 
-async fn sync_wordset(client: &Client, ws: Wordset) -> Result<()> {
-    db::save_ws_if_not_exists(&ws).await?;
+pub enum IdOrName {
+    Id(i32),
+    Name(String),
+}
+
+pub async fn sync_wordset(client: &Client, ws_id_or_name: IdOrName) -> Result<()> {
+    let ws_id = match ws_id_or_name {
+        IdOrName::Id(id) => id,
+        IdOrName::Name(name) => db::get_ws_id_by_name(name).await?,
+    };
     log::info!("start fetching words");
-    let words = fetch_until_completed(|ps, p| client.words_of_wordset(ws.id, ps, p)).await?;
+    let words = fetch_until_completed(|ps, p| client.words_of_wordset(ws_id, ps, p)).await?;
     log::info!("got {} words", words.len());
 
     log::info!("start fetching meanings");
@@ -45,7 +54,7 @@ async fn sync_wordset(client: &Client, ws: Wordset) -> Result<()> {
         .filter(|p| filtered.contains(&p.id))
         .collect();
     if meanings.len() > 0 {
-        db::save_new_ws_words(meanings, ws.id).await?;
+        db::save_new_ws_words(meanings, ws_id).await?;
     }
     Ok(())
 }

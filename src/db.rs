@@ -1,21 +1,17 @@
 use crate::client::models::{Meaning, Wordset};
-use anyhow::Result;
-use dotenv::dotenv;
+use anyhow::{bail, Result};
 use entity::{words, wordsets};
 use once_cell::sync::OnceCell;
-use sea_orm::ActiveValue::Set;
+use sea_orm::ActiveValue::{NotSet, Set};
 use sea_orm::{
-    ConnectOptions, ConnectionTrait, Database, DatabaseBackend, DatabaseConnection, EntityTrait,
-    QueryResult, Statement,
+    ColumnTrait, ConnectOptions, ConnectionTrait, Database, DatabaseBackend, DatabaseConnection,
+    EntityTrait, QueryFilter, QueryResult, Statement,
 };
 
 static POOL: OnceCell<DatabaseConnection> = OnceCell::new();
 
-pub async fn init_pool() {
-    dotenv().ok();
-    let url = std::env::var("DATABASE_URL").expect("Environment variable 'DATABASE_URL' not set");
-
-    let mut opt = ConnectOptions::new(url);
+pub async fn init_pool(db_url: &str) {
+    let mut opt = ConnectOptions::from(db_url);
     opt.max_connections(1).min_connections(1);
     POOL.set(
         Database::connect(opt)
@@ -73,7 +69,52 @@ fn make_word(mean: Meaning, wordset_id: i32) -> words::ActiveModel {
             .collect::<Vec<String>>()
             .join(",")),
         wordset_id: Set(wordset_id),
+        exported: Set(false),
     }
+}
+
+pub async fn mark_as_exported(ids: Vec<i32>) -> Result<()> {
+    words::Entity::update_many()
+        .set(words::ActiveModel {
+            id: NotSet,
+            word_id: NotSet,
+            difficulty_level: NotSet,
+            text: NotSet,
+            translation: NotSet,
+            definition: NotSet,
+            is_gold_3000: NotSet,
+            examples: NotSet,
+            wordset_id: NotSet,
+            exported: Set(true),
+        })
+        .filter(words::Column::Id.is_in(ids))
+        .exec(get_pool())
+        .await?;
+    Ok(())
+}
+
+pub async fn get_unexported_words() -> Result<Vec<words::Model>> {
+    Ok(words::Entity::find()
+        .filter(words::Column::Exported.eq(false))
+        .all(get_pool())
+        .await?)
+}
+
+pub async fn get_all_words() -> Result<Vec<words::Model>> {
+    Ok(words::Entity::find().all(get_pool()).await?)
+}
+
+pub async fn get_ws_id_by_name(name: String) -> Result<i32> {
+    Ok(
+        match wordsets::Entity::find()
+            .filter(wordsets::Column::Name.eq(name))
+            .one(get_pool())
+            .await?
+        {
+            Some(ws) => ws.id,
+            None => bail!("wordset not found"),
+        },
+    )
 }
 
 pub async fn filter_unexisted_word_ids(found: &Vec<i32>) -> Result<Vec<i32>> {
